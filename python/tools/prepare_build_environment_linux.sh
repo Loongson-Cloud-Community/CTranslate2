@@ -3,17 +3,17 @@
 set -e
 set -x
 
-pip install "cmake==3.22.*"
+#pip install "cmake==3.22.*"
 
-if [ "$CIBW_ARCHS" == "aarch64" ]; then
+if [ "$CIBW_ARCHS" == "loongarch64" ]; then
 
     OPENBLAS_VERSION=0.3.21
     curl -L -O https://github.com/xianyi/OpenBLAS/releases/download/v${OPENBLAS_VERSION}/OpenBLAS-${OPENBLAS_VERSION}.tar.gz
     tar xf *.tar.gz && rm *.tar.gz
-    cd OpenBLAS-*
+    cd OpenBLAS-* && patch -p1 < ../0001-la.patch
     # NUM_THREADS: maximum value for intra_threads
     # NUM_PARALLEL: maximum value for inter_threads
-    make TARGET=ARMV8 NO_SHARED=1 BUILD_SINGLE=1 NO_LAPACK=1 ONLY_CBLAS=1 USE_OPENMP=1 NUM_THREADS=32 NUM_PARALLEL=8
+    make TARGET=LOONGSON3R5 NO_SHARED=1 BUILD_SINGLE=1 NO_LAPACK=1 ONLY_CBLAS=1 USE_OPENMP=1 NUM_THREADS=32 NUM_PARALLEL=8 CFLAGS="-mabi=lp64d"
     make install NO_SHARED=1
     cd ..
     rm -r OpenBLAS-*
@@ -61,14 +61,14 @@ fi
 
 mkdir build-release && cd build-release
 
-if [ "$CIBW_ARCHS" == "aarch64" ]; then
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_CLI=OFF -DWITH_MKL=OFF -DOPENMP_RUNTIME=COMP -DCMAKE_PREFIX_PATH="/opt/OpenBLAS" -DWITH_OPENBLAS=ON -DWITH_RUY=ON ..
+if [ "$CIBW_ARCHS" == "loongarch64" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CPU_DISPATCH=OFF -DBUILD_CLI=OFF -DWITH_MKL=OFF -DOPENMP_RUNTIME=COMP -DCMAKE_PREFIX_PATH="/opt/OpenBLAS" -DWITH_OPENBLAS=ON -DWITH_RUY=ON ..
 else
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-msse4.1" -DBUILD_CLI=OFF -DWITH_DNNL=ON -DOPENMP_RUNTIME=COMP -DWITH_CUDA=ON -DWITH_CUDNN=ON -DCUDA_DYNAMIC_LOADING=ON -DCUDA_NVCC_FLAGS="-Xfatbin=-compress-all" -DCUDA_ARCH_LIST="Common"  -DWITH_TENSOR_PARALLEL=ON ..
 fi
 
 VERBOSE=1 make -j$(nproc) install
 cd ..
-rm -r build-release
+rm -rf build-release
 
 cp README.md python/

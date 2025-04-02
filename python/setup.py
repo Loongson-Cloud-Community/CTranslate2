@@ -8,7 +8,11 @@ from pybind11.setup_helpers import ParallelCompile
 from setuptools import Extension, find_packages, setup
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-include_dirs = [pybind11.get_include()]
+include_dirs = [
+    pybind11.get_include(),  # Pybind11 头文件
+    os.path.join(base_dir, "../include"),  # 添加 ctranslate2 头文件路径
+]
+
 library_dirs = []
 
 
