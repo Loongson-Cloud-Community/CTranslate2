@@ -831,7 +831,7 @@ index 61ac171a..2e44d5b3 100755
      tar xf *.tar.gz && rm *.tar.gz
 -    cd OpenBLAS-*
 +    SRC_DIR="${WORK_DIR}/OpenBLAS-${OPENBLAS_VERSION}"
-+    cd "$SRC_DIR"
++    cd OpenBLAS-*
 +    patch -p1 < "$PATCH_FILE"
      # NUM_THREADS: maximum value for intra_threads
      # NUM_PARALLEL: maximum value for inter_threads
