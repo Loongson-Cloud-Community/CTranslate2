@@ -1,0 +1,98 @@
+From 7ce62df28eecd82db45e7f714fd613298678c100 Mon Sep 17 00:00:00 2001
+From: yzewei <yangzewei@loongson.cn>
+Date: Thu, 16 Oct 2025 09:24:33 +0800
+Subject: [PATCH] add loong64 support
+
+Signed-off-by: yzewei <yangzewei@loongson.cn>
+---
+ python/0001-la.patch                            | 15 +++++++++++++++
+ python/setup.py                                 |  6 +++++-
+ python/tools/prepare_build_environment_linux.sh | 14 +++++++-------
+ 3 files changed, 27 insertions(+), 8 deletions(-)
+ create mode 100644 python/0001-la.patch
+
+diff --git a/python/0001-la.patch b/python/0001-la.patch
+new file mode 100644
+index 0000000..56dde77
+--- /dev/null
++++ b/python/0001-la.patch
+@@ -0,0 +1,15 @@
++diff --git a/Makefile.system b/Makefile.system
++index bada954..ade9b18 100644
++--- a/Makefile.system
+++++ b/Makefile.system
++@@ -896,8 +896,8 @@ BINARY_DEFINED = 1
++ endif
++ 
++ ifeq ($(ARCH), loongarch64)
++-CCOMMON_OPT += -march=loongarch64 -mabi=lp64
++-FCOMMON_OPT += -march=loongarch64 -mabi=lp64
+++CCOMMON_OPT += -march=loongarch64 -mabi=lp64d
+++FCOMMON_OPT += -march=loongarch64 -mabi=lp64d
++ endif
++ 
++ endif
+diff --git a/python/setup.py b/python/setup.py
+index 92d07fa..1ce6524 100644
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -8,7 +8,11 @@ from pybind11.setup_helpers import ParallelCompile
+ from setuptools import Extension, find_packages, setup
+ 
+ base_dir = os.path.dirname(os.path.abspath(__file__))
+-include_dirs = [pybind11.get_include()]
++include_dirs = [
++    pybind11.get_include(),  # Pybind11 头文件
++    os.path.join(base_dir, "../include"),  # 添加 ctranslate2 头文件路径
++]
++
+ library_dirs = []
+ 
+ 
+diff --git a/python/tools/prepare_build_environment_linux.sh b/python/tools/prepare_build_environment_linux.sh
+index 61ac171..7ce2145 100755
+--- a/python/tools/prepare_build_environment_linux.sh
++++ b/python/tools/prepare_build_environment_linux.sh
+@@ -3,17 +3,17 @@
+ set -e
+ set -x
+ 
+-pip install "cmake==3.22.*"
++#pip install "cmake==3.22.*"
+ 
+-if [ "$CIBW_ARCHS" == "aarch64" ]; then
++if [ "$CIBW_ARCHS" == "loongarch64" ]; then
+ 
+     OPENBLAS_VERSION=0.3.21
+     curl -L -O https://github.com/xianyi/OpenBLAS/releases/download/v${OPENBLAS_VERSION}/OpenBLAS-${OPENBLAS_VERSION}.tar.gz
+     tar xf *.tar.gz && rm *.tar.gz
+-    cd OpenBLAS-*
++    cd OpenBLAS-* && patch -p1 < ../0001-la.patch
+     # NUM_THREADS: maximum value for intra_threads
+     # NUM_PARALLEL: maximum value for inter_threads
+-    make TARGET=ARMV8 NO_SHARED=1 BUILD_SINGLE=1 NO_LAPACK=1 ONLY_CBLAS=1 USE_OPENMP=1 NUM_THREADS=32 NUM_PARALLEL=8
++    make TARGET=LOONGSON3R5 NO_SHARED=1 BUILD_SINGLE=1 NO_LAPACK=1 ONLY_CBLAS=1 USE_OPENMP=1 NUM_THREADS=32 NUM_PARALLEL=8 CFLAGS="-mabi=lp64d"
+     make install NO_SHARED=1
+     cd ..
+     rm -r OpenBLAS-*
+@@ -61,14 +61,14 @@ fi
+ 
+ mkdir build-release && cd build-release
+ 
+-if [ "$CIBW_ARCHS" == "aarch64" ]; then
+-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_CLI=OFF -DWITH_MKL=OFF -DOPENMP_RUNTIME=COMP -DCMAKE_PREFIX_PATH="/opt/OpenBLAS" -DWITH_OPENBLAS=ON -DWITH_RUY=ON ..
++if [ "$CIBW_ARCHS" == "loongarch64" ]; then
++    cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CPU_DISPATCH=OFF -DBUILD_CLI=OFF -DWITH_MKL=OFF -DOPENMP_RUNTIME=COMP -DCMAKE_PREFIX_PATH="/opt/OpenBLAS" -DWITH_OPENBLAS=ON -DWITH_RUY=ON ..
+ else
+     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-msse4.1" -DBUILD_CLI=OFF -DWITH_DNNL=ON -DOPENMP_RUNTIME=COMP -DWITH_CUDA=ON -DWITH_CUDNN=ON -DCUDA_DYNAMIC_LOADING=ON -DCUDA_NVCC_FLAGS="-Xfatbin=-compress-all" -DCUDA_ARCH_LIST="Common"  -DWITH_TENSOR_PARALLEL=ON ..
+ fi
+ 
+ VERBOSE=1 make -j$(nproc) install
+ cd ..
+-rm -r build-release
++rm -rf build-release
+ 
+ cp README.md python/
+-- 
+2.43.0
+
