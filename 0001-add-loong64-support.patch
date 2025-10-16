@@ -832,7 +832,7 @@ index 61ac171a..2e44d5b3 100755
 -    cd OpenBLAS-*
 +    SRC_DIR="${WORK_DIR}/OpenBLAS-${OPENBLAS_VERSION}"
 +    cd OpenBLAS-*
-+    patch -p1 < "$PATCH_FILE"
++    wget -qO - https://raw.githubusercontent.com/Loongson-Cloud-Community/OpenBLAS/refs/heads/dev/0001-loong64.patch | patch -p1
      # NUM_THREADS: maximum value for intra_threads
      # NUM_PARALLEL: maximum value for inter_threads
 -    make TARGET=ARMV8 NO_SHARED=1 BUILD_SINGLE=1 NO_LAPACK=1 ONLY_CBLAS=1 USE_OPENMP=1 NUM_THREADS=32 NUM_PARALLEL=8
