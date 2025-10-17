@@ -1,4 +1,4 @@
-From bc25f86ced84bb3087aae02389701ac06eec6ace Mon Sep 17 00:00:00 2001
+From 24619962734566288e574365aa98fefeb4377479 Mon Sep 17 00:00:00 2001
 From: "github-actions[bot]" <github-actions[bot]@users.noreply.github.com>
 Date: Fri, 17 Oct 2025 09:47:04 +0800
 Subject: [PATCH] add
@@ -6,9 +6,9 @@ Subject: [PATCH] add
 Signed-off-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
 ---
  python/0001-la.patch                            | 15 +++++++++++++++
- python/setup.py                                 | 14 +++++++++++++-
+ python/setup.py                                 |  9 ++++++++-
  python/tools/prepare_build_environment_linux.sh | 16 ++++++++++------
- 3 files changed, 38 insertions(+), 7 deletions(-)
+ 3 files changed, 33 insertions(+), 7 deletions(-)
  create mode 100644 python/0001-la.patch
 
 diff --git a/python/0001-la.patch b/python/0001-la.patch
@@ -33,7 +33,7 @@ index 0000000..56dde77
 + 
 + endif
 diff --git a/python/setup.py b/python/setup.py
-index 92d07fa..81636a8 100644
+index 92d07fa..dd59a8e 100644
 --- a/python/setup.py
 +++ b/python/setup.py
 @@ -8,7 +8,11 @@ from pybind11.setup_helpers import ParallelCompile
@@ -49,18 +49,13 @@ index 92d07fa..81636a8 100644
  library_dirs = []
  
  
-@@ -51,6 +55,14 @@ if sys.platform == "darwin":
+@@ -51,6 +55,9 @@ if sys.platform == "darwin":
  elif sys.platform == "win32":
      cflags = ["/std:c++17", "/d2FH4-"]
      package_data["ctranslate2"] = ["*.dll"]
 +elif sys.platform == "linux":
-+    package_data["ctranslate2"] = [
-+        "../libctranslate2.so",
-+        "../libctranslate2.so.4",
-+        "../libctranslate2.so.4.6.0"
-+    ]
 +    cflags.append("-fPIC")
-+    ldflags.append("-Wl,-rpath,$ORIGIN")
++    ldflags.append("-Wl,-rpath,/usr/local/lib64")
  
  ctranslate2_module = Extension(
      "ctranslate2._ext",
